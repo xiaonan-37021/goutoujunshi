@@ -1,0 +1,33 @@
+name: Sync upstream
+
+on:
+  schedule:
+    # Every day at 04:17 China Standard Time (UTC+8).
+    - cron: '17 20 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-upstream-main
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: github.repository == 'xiaonan-37021/goutoujunshi'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Merge upstream main into fork main
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TARGET_BRANCH: main
+        # GitHub merges from the fork's parent (shengjidaguai-china/goutoujunshi).
+        # Merge conflicts fail the job; fork commits are never force-overwritten.
+        run: |
+          gh api --method POST "repos/${GH_REPO}/merge-upstream" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            -f "branch=${TARGET_BRANCH}"
